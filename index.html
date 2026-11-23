@@ -69,6 +69,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
 #history b { font-weight: 400; color: var(--ink); min-width: 28px; text-align: center; border: 1.5px solid var(--line); border-radius: 8px; padding: 1px 5px; background: rgba(255,244,224,.6); }
 #history b.s1 { border-color: var(--p1); } #history b.s2 { border-color: var(--p2); }
 #conn { font-size: .75rem; color: var(--muted); text-align: center; }
+.tool.icon { width: 44px; height: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; color: var(--ink); }
 #table { font: 400 .9rem var(--display); color: var(--purple); text-align: center; margin-top: -6px; }
 #seat { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; padding: 20px; background: rgba(74,42,18,.5); backdrop-filter: blur(3px); }
 #seat .box { width: min(100%, 380px); background: var(--paper); border-radius: 24px; padding: 22px; display: grid; gap: 14px; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
@@ -93,7 +94,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     <div class="tools">
       <button class="tool" id="shake" type="button">흔들기 켜기</button>
       <button class="tool" id="reset" type="button">새 판</button>
-      <button class="tool" id="sound" type="button" aria-pressed="true">소리 켜짐</button>
+      <button class="tool icon" id="sound" type="button" aria-pressed="true" aria-label="소리 켜짐"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
   </header>
   <div id="stage">
@@ -124,6 +125,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   var throwBtn = document.getElementById("throw");
   var historyEl = document.getElementById("history");
   var soundBtn = document.getElementById("sound");
+  var SPK_ON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>', SPK_OFF = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   var connEl = document.getElementById("conn");
   var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -470,7 +472,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   });
   soundBtn.addEventListener("click", function () {
     soundOn = !soundOn;
-    soundBtn.textContent = soundOn ? "소리 켜짐" : "소리 꺼짐";
+    soundBtn.innerHTML = soundOn ? SPK_ON : SPK_OFF;
+    soundBtn.setAttribute("aria-label", soundOn ? "소리 켜짐" : "소리 꺼짐");
     soundBtn.setAttribute("aria-pressed", String(soundOn));
     if (soundOn) ensureAudio();
   });
@@ -567,7 +570,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
       hello(); showConn();
     });
     c.on("reconnect", function () { if (opened) connEl.textContent = "다시 연결하는 중…"; });
-    c.on("offline", function () { connected = false; if (opened) connEl.textContent = "다시 연결하는 중…"; });
+    var switchTimer = null;
+    c.on("offline", function () {
+      connected = false; if (opened) connEl.textContent = "다시 연결하는 중…";
+      clearTimeout(switchTimer);
+      switchTimer = setTimeout(function () { if (!connected && client === c) { try { c.end(true); } catch (e) {} connect(i + 1); } }, 12000);
+    });
+    c.on("connect", function () { clearTimeout(switchTimer); });
     c.on("message", onMessage);
   }
   connect(0);
