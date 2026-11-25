@@ -28,7 +28,7 @@ body {
 }
 #app {
   height: 100%; max-width: 560px; margin-inline: auto;
-  display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 8px;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto auto; gap: 8px;
   padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
 }
 header { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: start; gap: 8px; }
@@ -84,6 +84,33 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
 #seat .b1 { background: var(--p1); } #seat .b2 { background: var(--p2); }
 #seat .row button:disabled { opacity: .35; cursor: default; }
 #seat .taken { font-size: .8125rem; color: var(--muted); min-height: 1.2em; }
+
+/* ---------- 질문 칸 ---------- */
+#qbar { display: grid; gap: 6px; }
+#qbar .lead { text-align: center; font-size: .8125rem; color: var(--muted); }
+#qbar .row { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; }
+.qb { position: relative; display: grid; justify-items: center; gap: 2px; padding: 8px 2px 6px; border: 2px solid var(--line); border-radius: 16px; background: var(--paper); color: var(--ink); font: 400 .8125rem var(--display); cursor: pointer; box-shadow: 0 3px 0 rgba(150,80,20,.35); }
+.qb:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(150,80,20,.35); }
+.qb:disabled { opacity: .45; cursor: default; }
+.qb svg { width: 34px; height: 34px; }
+.qb > span:last-child { white-space: nowrap; letter-spacing: -.02em; }
+.qb[data-k="high"] > span:last-child { font-size: .75rem; letter-spacing: -.05em; }
+.qb .ai, #qcard .ai { position: absolute; top: -7px; left: -4px; box-shadow: 0 0 0 2px var(--paper); font: 700 .625rem/1 var(--body); color: #fff; background: var(--purple); border-radius: 6px; padding: 2px 4px; }
+#qcard { position: fixed; inset: 0; z-index: 6; display: grid; place-items: center; padding: 20px; background: rgba(74,42,18,.5); backdrop-filter: blur(3px); }
+#qcard .box { position: relative; width: min(100%, 420px); background: var(--paper); border: 3px solid var(--line); border-radius: 28px; padding: 24px 22px 20px; display: grid; gap: 14px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
+#qcard .ic svg { width: 72px; height: 72px; }
+#qcard .ai { top: 14px; left: 16px; font-size: .75rem; }
+#qcard .from { font-size: .875rem; color: var(--muted); min-height: 1.2em; }
+#qcard .from.s2 { color: var(--p2); }
+#qcard h2 { margin: 0; font: 400 1.6rem var(--display); color: var(--purple); }
+#qcard .q { margin: 0; font: 400 1.35rem/1.5 var(--display); color: var(--ink); word-break: keep-all; }
+#qcard .key { margin: 0; font-size: .8125rem; color: var(--muted); word-break: keep-all; }
+#qcard .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#qcard .btns button { min-height: 56px; border: 0; border-radius: 16px; font: 400 1.15rem var(--display); cursor: pointer; }
+#qcard .again { background: #fff; color: var(--purple); border: 2px solid var(--purple) !important; }
+#qcard .done { background: var(--purple); color: #fff; box-shadow: 0 4px 0 #522468; }
+@media (prefers-reduced-motion: reduce) { #qcard .box { animation: none; } }
+@media (max-height: 640px) { .qb svg { width: 26px; height: 26px; } .qb { padding: 6px 2px 4px; } }
 [hidden] { display: none !important; }
 </style>
 </head>
@@ -105,6 +132,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     <div id="number" class="idle">주사위를 던져 보세요</div>
     <div id="hint"></div>
   </div>
+  <div id="qbar">
+    <div class="lead">말이 선 칸의 그림을 눌러요</div>
+    <div class="row"><button class="qb" type="button" data-k="think" aria-label="생각해요 칸"><span class="ai">AI</span><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 32c-5 0-8-3-8-7s3-7 7-7c1-5 5-8 10-8 4 0 7 2 9 5 5 0 9 3 9 8s-4 9-9 9z" fill="#fff" stroke="#6b3a1c" stroke-width="2.5" stroke-linejoin="round"/><circle cx="12" cy="38" r="3" fill="#fff" stroke="#6b3a1c" stroke-width="2"/><circle cx="7" cy="43" r="1.8" fill="#fff" stroke="#6b3a1c" stroke-width="1.6"/><path d="M39 4l1.5 3.5L44 9l-3.5 1.5L39 14l-1.5-3.5L34 9l3.5-1.5z" fill="#e7b416"/></svg><span>생각해요</span></button><button class="qb" type="button" data-k="check" aria-label="확인해요 칸"><span class="ai">AI</span><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="20" cy="20" r="13" fill="#dff0ff" stroke="#6b3a1c" stroke-width="3"/><path d="M13 20l5 5 9-10" fill="none" stroke="#2f7fd6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 30l11 11" stroke="#e08a2c" stroke-width="6" stroke-linecap="round"/></svg><span>확인해요</span></button><button class="qb" type="button" data-k="pick" aria-label="골라요 칸"><span class="ai">AI</span><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 44V28M24 28L12 16M24 28l12-12" fill="none" stroke="#6b3a1c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 44V28M24 28L12 16M24 28l12-12" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 20V10h10M42 20V10H32" fill="none" stroke="#e0684a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="28" r="3.5" fill="#f2a7a0"/></svg><span>골라요</span></button><button class="qb" type="button" data-k="keep" aria-label="지켜요 칸"><span class="ai">AI</span><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M15 21v-6a9 9 0 0 1 18 0v6" fill="none" stroke="#6b3a1c" stroke-width="3.5" stroke-linecap="round"/><rect x="9" y="20" width="30" height="23" rx="6" fill="#fff" stroke="#6b3a1c" stroke-width="3"/><path d="M24 38s-7-4.2-7-8.6a3.6 3.6 0 0 1 7-1.2 3.6 3.6 0 0 1 7 1.2C31 33.8 24 38 24 38z" fill="#e0526a"/></svg><span>지켜요</span></button><button class="qb" type="button" data-k="high" aria-label="하이파이브 칸"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 44S4 32 4 17a10 10 0 0 1 20-3 10 10 0 0 1 20 3c0 15-20 27-20 27z" fill="#f7b6c2" stroke="#d24d6a" stroke-width="2.5"/><path d="M22 34l-6-6c-1-1-1-2.6 0-3.6l1-11c.2-1.6 2.6-1.6 2.8 0l.7 6M26 34l6-6c1-1 1-2.6 0-3.6l-1-11c-.2-1.6-2.6-1.6-2.8 0l-.7 6" fill="#ffe1c4" stroke="#6b3a1c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><span>하이파이브</span></button></div>
+  </div>
   <div id="controls">
     <button id="throw" type="button">던지기</button>
     <div id="history" aria-label="지난 결과"><span>지난 결과</span></div>
@@ -113,6 +144,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   </div>
 </div>
 
+<div id="qcard" hidden role="dialog" aria-modal="true" aria-labelledby="qtitle">
+  <div class="box">
+    <span class="ai" hidden>AI</span>
+    <div class="from"></div>
+    <div class="ic"></div>
+    <h2 id="qtitle"></h2>
+    <p class="q" aria-live="polite"></p>
+    <p class="key"></p>
+    <div class="btns">
+      <button class="again" type="button">다시 듣기</button>
+      <button class="done" type="button">다 했어요</button>
+    </div>
+  </div>
+</div>
 <script src="mqtt.min.js"></script>
 <script>
 (function () {
@@ -197,7 +242,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   var LIGHT = norm([-0.45, 0.65, 0.65]);
   // 함께 하기
   var me = { n: 0, v: 0, dx: 0, dy: 0, p: 0 };
-  var seen = {}, room = null, queue = [];
+  var seen = {}, room = null, queue = [], qOpen = false;
 
   function resize() {
     var r = canvas.getBoundingClientRect();
@@ -242,7 +287,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   }
 
   /* ---------- 버튼 ---------- */
-  function canThrow() { return !rolling && !queue.length; }
+  function canThrow() { return !rolling && !queue.length && !qOpen; }
   function renderBtn() { throwBtn.disabled = !canThrow(); }
 
   function boomSound() {
@@ -533,6 +578,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     connEl.textContent = count ? "실시간 연결됨 · 함께 보는 폰 " + count + "대" : "실시간 연결됨 · 다른 폰을 기다리는 중";
   }
   function clearBoard(text) {
+    if (qOpen) hideQ(false);
     history = []; queue = []; renderHistory();
     whoEl.textContent = ""; whoEl.className = "";
     numberEl.className = "idle"; numberEl.textContent = text; hintEl.textContent = "";
@@ -549,6 +595,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     var id = g.id.slice(0, 12);
     here[id] = Date.now();
     if (topic === BASE + "reset") { if (!rolling) clearBoard("새 판이 시작됐어요"); else queue = []; showConn(); return; }
+    if (topic === BASE + "q") { onQMessage(g); showConn(); return; }
     if (topic === BASE + "roll") {
       var v = Math.floor(num(g.v, 0, 8, 0));
       if (v >= 1) playRemote({ v: v, dx: num(g.dx, -1, 1, 0.5), dy: num(g.dy, -1, 1, -0.7), p: num(g.p, 0, 1, 0.4) });
@@ -566,7 +613,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     var giveUp = setTimeout(function () { if (!opened) { try { c.end(true); } catch (e) {} connect(i + 1); } }, 9000);
     c.on("connect", function () {
       opened = true; clearTimeout(giveUp); connected = true;
-      c.subscribe([BASE + "roll", BASE + "here", BASE + "reset"]);
+      c.subscribe([BASE + "roll", BASE + "here", BASE + "reset", BASE + "q"]);
       hello(); showConn();
     });
     c.on("reconnect", function () { if (opened) connEl.textContent = "다시 연결하는 중…"; });
@@ -579,6 +626,130 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     c.on("connect", function () { clearTimeout(switchTimer); });
     c.on("message", onMessage);
   }
+
+  /* ---------- 질문 칸 ----------
+     질문을 바꾸려면 아래 Q 목록만 고치면 돼요.
+     녹음 파일을 쓰려면 질문을 { t: "질문", a: "audio/think1.mp3" } 처럼 적어요. a가 없으면 폰이 읽어 줘요. */
+  var Q = {
+    think: { name: "생각해요", key: "내 생각도 소중해요. 먼저 말해 봐요.", list: [
+      { t: "AI한테 묻기 전에 내 생각 먼저! 바람은 어디서 올까?", a: "audio/think1.mp3" },
+      { t: "AI한테 묻기 전에 내 생각 먼저! 두더지는 땅속에서 뭘 먹을까?", a: "audio/think2.mp3" },
+      { t: "AI가 “돌은 아무도 못 움직여요”라고 했어. 너는 어떻게 하면 움직일 수 있을 것 같아?", a: "audio/think3.mp3" }
+    ]},
+    check: { name: "확인해요", key: "AI 말도 한 번 더 확인해요.", list: [
+      { t: "AI가 “바람이 불면 구름이 다 사라져요”라고 했어. 정말인지 어떻게 알아볼까?", a: "audio/check1.mp3" },
+      { t: "AI가 “이 돌은 아무도 못 움직여요”라고 했어. 진짜인지 어떻게 알아볼까?", a: "audio/check2.mp3" },
+      { t: "AI 말이 맞는지 헷갈릴 때, 누구에게 물어볼 수 있을까?", a: "audio/check3.mp3" }
+    ]},
+    pick: { name: "골라요", key: "AI는 도와줄 뿐, 고르는 건 나예요.", list: [
+      { t: "AI가 “초코 맛이 제일 인기 있어요”라고 했어. 너는 무슨 맛 아이스크림을 고를래?", a: "audio/pick1.mp3" },
+      { t: "AI가 “오늘은 블록 놀이를 하세요”라고 했어. 그런데 너는 그림 그리기가 하고 싶어. 어떻게 할래?", a: "audio/pick2.mp3" },
+      { t: "AI가 공룡 책이랑 우주 책을 추천했어. 너는 어떤 책을 고를래?", a: "audio/pick3.mp3" }
+    ]},
+    keep: { name: "지켜요", key: "내 정보는 소중해요. 헷갈리면 어른에게 먼저 물어봐요.", list: [
+      { t: "AI가 “어디 살아요? 주소를 알려 주세요” 하면 어떻게 할까?", a: "audio/keep1.mp3" },
+      { t: "AI가 “이름이랑 유치원 이름을 알려 주세요” 하면 어떻게 할까?", a: "audio/keep2.mp3" },
+      { t: "짝꿍 사진을 AI에 올리고 싶어. 먼저 누구에게 물어봐야 할까?", a: "audio/keep3.mp3" }
+    ]},
+    high: { name: "하이파이브", key: "짝꿍과 하이파이브하며 말해요!", list: [
+      { t: "짝꿍과 하이파이브! \u201c너랑 놀아서 참 좋아!\u201d", a: "audio/high1.mp3" }
+    ]}
+  };
+  var QICON = {"think": "<svg viewBox=\"0 0 48 48\" aria-hidden=\"true\"><path d=\"M14 32c-5 0-8-3-8-7s3-7 7-7c1-5 5-8 10-8 4 0 7 2 9 5 5 0 9 3 9 8s-4 9-9 9z\" fill=\"#fff\" stroke=\"#6b3a1c\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><circle cx=\"12\" cy=\"38\" r=\"3\" fill=\"#fff\" stroke=\"#6b3a1c\" stroke-width=\"2\"/><circle cx=\"7\" cy=\"43\" r=\"1.8\" fill=\"#fff\" stroke=\"#6b3a1c\" stroke-width=\"1.6\"/><path d=\"M39 4l1.5 3.5L44 9l-3.5 1.5L39 14l-1.5-3.5L34 9l3.5-1.5z\" fill=\"#e7b416\"/></svg>", "check": "<svg viewBox=\"0 0 48 48\" aria-hidden=\"true\"><circle cx=\"20\" cy=\"20\" r=\"13\" fill=\"#dff0ff\" stroke=\"#6b3a1c\" stroke-width=\"3\"/><path d=\"M13 20l5 5 9-10\" fill=\"none\" stroke=\"#2f7fd6\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M30 30l11 11\" stroke=\"#e08a2c\" stroke-width=\"6\" stroke-linecap=\"round\"/></svg>", "pick": "<svg viewBox=\"0 0 48 48\" aria-hidden=\"true\"><path d=\"M24 44V28M24 28L12 16M24 28l12-12\" fill=\"none\" stroke=\"#6b3a1c\" stroke-width=\"8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M24 44V28M24 28L12 16M24 28l12-12\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M6 20V10h10M42 20V10H32\" fill=\"none\" stroke=\"#e0684a\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"24\" cy=\"28\" r=\"3.5\" fill=\"#f2a7a0\"/></svg>", "keep": "<svg viewBox=\"0 0 48 48\" aria-hidden=\"true\"><path d=\"M15 21v-6a9 9 0 0 1 18 0v6\" fill=\"none\" stroke=\"#6b3a1c\" stroke-width=\"3.5\" stroke-linecap=\"round\"/><rect x=\"9\" y=\"20\" width=\"30\" height=\"23\" rx=\"6\" fill=\"#fff\" stroke=\"#6b3a1c\" stroke-width=\"3\"/><path d=\"M24 38s-7-4.2-7-8.6a3.6 3.6 0 0 1 7-1.2 3.6 3.6 0 0 1 7 1.2C31 33.8 24 38 24 38z\" fill=\"#e0526a\"/></svg>", "high": "<svg viewBox=\"0 0 48 48\" aria-hidden=\"true\"><path d=\"M24 44S4 32 4 17a10 10 0 0 1 20-3 10 10 0 0 1 20 3c0 15-20 27-20 27z\" fill=\"#f7b6c2\" stroke=\"#d24d6a\" stroke-width=\"2.5\"/><path d=\"M22 34l-6-6c-1-1-1-2.6 0-3.6l1-11c.2-1.6 2.6-1.6 2.8 0l.7 6M26 34l6-6c1-1 1-2.6 0-3.6l-1-11c-.2-1.6-2.6-1.6-2.8 0l-.7 6\" fill=\"#ffe1c4\" stroke=\"#6b3a1c\" stroke-width=\"2\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg>"};
+  var qEl = document.getElementById("qcard"), qBox = qEl.querySelector(".box");
+  var qFrom = qEl.querySelector(".from"), qIc = qEl.querySelector(".ic"), qTitle = document.getElementById("qtitle");
+  var qText = qEl.querySelector(".q"), qKey = qEl.querySelector(".key"), qAi = qEl.querySelector(".ai");
+  var qAgain = qEl.querySelector(".again"), qDone = qEl.querySelector(".done");
+  var qBtns = Array.prototype.slice.call(document.querySelectorAll(".qb"));
+  var qBag = {}, qCur = null, qPlayer = null, koVoice = null;
+
+  function pickVoice() {
+    try {
+      var vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+      koVoice = vs.filter(function (v) { return /^ko/i.test(v.lang); })[0] || null;
+    } catch (e) {}
+  }
+  if (window.speechSynthesis) { pickVoice(); try { speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {} }
+
+  function stopVoice() {
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+    if (qPlayer) { try { qPlayer.pause(); } catch (e) {} qPlayer = null; }
+  }
+  function sayItem(item) {
+    stopVoice();
+    if (!soundOn || !item) return;
+    if (item.a) {
+      try { qPlayer = new Audio(item.a); qPlayer.play().catch(function () { speakText(item.t); }); return; } catch (e) {}
+    }
+    speakText(item.t);
+  }
+  function speakText(t) {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    try {
+      var u = new SpeechSynthesisUtterance(t.replace(/[“”"]/g, ""));
+      u.lang = "ko-KR"; u.rate = 0.9; u.pitch = 1.1;
+      if (koVoice) u.voice = koVoice;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  function asItem(x) { return typeof x === "string" ? { t: x } : x; }
+  // 같은 질문이 연달아 나오지 않도록 한 바퀴씩 섞어서 꺼내요
+  function nextIndex(k) {
+    var n = Q[k].list.length;
+    if (!qBag[k] || !qBag[k].length) {
+      var a = []; for (var i = 0; i < n; i++) a.push(i);
+      for (var j = n - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)), t = a[j]; a[j] = a[r]; a[r] = t; }
+      if (qBag[k + "_last"] != null && n > 1 && a[0] === qBag[k + "_last"]) { a.push(a.shift()); }
+      qBag[k] = a;
+    }
+    var idx = qBag[k].shift(); qBag[k + "_last"] = idx; return idx;
+  }
+  function showQ(k, idx, mine) {
+    var g = Q[k]; if (!g) return;
+    var item = asItem(g.list[idx]); if (!item) return;
+    qCur = { k: k, i: idx, item: item, mine: mine };
+    qOpen = true; renderBtn(); renderQBtns();
+    qIc.innerHTML = QICON[k];
+    qAi.hidden = (k === "high");
+    qTitle.textContent = g.name;
+    qText.textContent = item.t;
+    qKey.textContent = g.key;
+    qFrom.textContent = mine ? "" : "짝꿍 폰에서 고른 칸이에요";
+    qFrom.className = mine ? "from" : "from s2";
+    qAgain.hidden = false;
+    qEl.hidden = false;
+    if (mine) sayItem(item);
+    setTimeout(function () { try { qDone.focus(); } catch (e) {} }, 50);
+  }
+  function hideQ(share) {
+    if (!qOpen) return;
+    stopVoice();
+    qEl.hidden = true; qOpen = false; qCur = null;
+    renderBtn(); renderQBtns();
+    if (share && client && connected) client.publish(BASE + "q", JSON.stringify({ id: myId, close: 1 }));
+  }
+  function renderQBtns() { qBtns.forEach(function (b) { b.disabled = qOpen || !!rolling; }); }
+  qBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      if (qOpen || rolling) return;
+      ensureAudio();
+      var k = b.getAttribute("data-k"), idx = nextIndex(k);
+      showQ(k, idx, true);
+      if (client && connected) client.publish(BASE + "q", JSON.stringify({ id: myId, k: k, i: idx }));
+    });
+  });
+  qAgain.addEventListener("click", function () { if (qCur) sayItem(qCur.item); });
+  qDone.addEventListener("click", function () { hideQ(true); });
+  qEl.addEventListener("click", function (e) { if (e.target === qEl) hideQ(true); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && qOpen) hideQ(true); });
+  function onQMessage(g) {
+    if (g.close) { hideQ(false); return; }
+    var k = String(g.k || ""); if (!Q.hasOwnProperty(k)) return;
+    var idx = Math.floor(num(g.i, 0, Q[k].list.length - 1, 0));
+    if (qOpen) stopVoice();
+    showQ(k, idx, false);
+  }
+  setInterval(renderQBtns, 300);
   connect(0);
   setInterval(function () { hello(); showConn(); }, 10000);
 
