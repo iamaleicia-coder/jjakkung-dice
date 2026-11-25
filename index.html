@@ -99,6 +99,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
 #qcard { position: fixed; inset: 0; z-index: 6; display: grid; place-items: center; padding: 20px; background: rgba(74,42,18,.5); backdrop-filter: blur(3px); }
 #qcard .box { position: relative; width: min(100%, 420px); background: var(--paper); border: 3px solid var(--line); border-radius: 28px; padding: 24px 22px 20px; display: grid; gap: 14px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
 #qcard .ic svg { width: 72px; height: 72px; }
+#qcard .ic img { width: 150px; height: 150px; display: block; margin: -6px auto -4px; }
+.qb.pic { padding: 2px; align-content: center; }
+.qb.pic img { width: 100%; max-width: 72px; aspect-ratio: 1; display: block; }
+.sr { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 #qcard .ai { top: 14px; left: 16px; font-size: .75rem; }
 #qcard .from { font-size: .875rem; color: var(--muted); min-height: 1.2em; }
 #qcard .from.s2 { color: var(--p2); }
@@ -662,6 +666,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   var qAgain = qEl.querySelector(".again"), qDone = qEl.querySelector(".done");
   var qBtns = Array.prototype.slice.call(document.querySelectorAll(".qb"));
   var qBag = {}, qCur = null, qPlayer = null, koVoice = null;
+  // 그림 파일이 있는 기호는 버튼과 카드에 그 그림을 써요 (그림 안에 이름과 AI 표시가 들어 있어요)
+  var QIMG = { pick: "img/pick.png", keep: "img/keep.png", check: "img/check.png" };
+  qBtns.forEach(function (b) {
+    var k = b.getAttribute("data-k");
+    if (QIMG[k]) { b.classList.add("pic"); b.innerHTML = '<img src="' + QIMG[k] + '" alt="' + Q[k].name + '">'; }
+  });
 
   function pickVoice() {
     try {
@@ -709,8 +719,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     var item = asItem(g.list[idx]); if (!item) return;
     qCur = { k: k, i: idx, item: item, mine: mine };
     qOpen = true; renderBtn(); renderQBtns();
-    qIc.innerHTML = QICON[k];
-    qAi.hidden = (k === "high");
+    if (QIMG[k]) { qIc.innerHTML = '<img src="' + QIMG[k] + '" alt="">'; qAi.hidden = true; qTitle.classList.add("sr"); }
+    else { qIc.innerHTML = QICON[k]; qAi.hidden = (k === "high"); qTitle.classList.remove("sr"); }
     qTitle.textContent = g.name;
     qText.textContent = item.t;
     qKey.textContent = g.key;
