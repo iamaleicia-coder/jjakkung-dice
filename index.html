@@ -50,10 +50,10 @@ h1 { margin: 0; font: 400 1.45rem var(--display); color: var(--purple); white-sp
 .pl.empty { opacity: .6; }
 #stage { position: relative; min-height: 0; }
 #dice { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; display: block; }
-#result { text-align: center; min-height: 108px; display: flex; flex-direction: column; justify-content: center; }
+#result { text-align: center; min-height: 92px; display: flex; flex-direction: column; justify-content: center; }
 #who { font-size: .9375rem; color: var(--muted); min-height: 1.4em; }
 #who.s1 { color: var(--p1); } #who.s2 { color: var(--p2); }
-#number { font: 400 clamp(3.2rem, 13vh, 4.8rem)/1 var(--display); color: var(--ink); }
+#number { font: 400 clamp(2.56rem, 10.4vh, 3.84rem)/1 var(--display); color: var(--ink); }
 #number .unit { font-size: .45em; margin-left: .12em; color: var(--muted); }
 #number.word { color: var(--boom); animation: pop .5s cubic-bezier(.3,1.8,.5,1); }
 #number.idle { font-size: 1.35rem; line-height: 1.4; }
@@ -392,13 +392,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   function rgb(c) { return "rgb(" + Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]) + ")"; }
   var RIPPLE = "150,80,30";
 
+  // 멈춘 모양 8가지 중 가장 키가 큰 모양의 윗꼭짓점 높이
+  var REST_TOP = 0;
+  for (var lb = 1; lb <= 8; lb++) { var rq = restPose(lb); [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(function (pv) { var rr = qRot(rq, pv); REST_TOP = Math.max(REST_TOP, rr[1] * 6 / (6 - rr[2])); }); }
+  var DICE_K = 0.56; // 주사위 크기 비율 (화면에 맞춰 자동으로 줄어들 수 있어요)
   function draw(now) {
     if (!W || !H) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    var S = Math.min(W * 0.4, H * 0.37) * 1.15; // 주사위 크기 (1.15 = 15% 키움)
+    var S = Math.min(W * 0.5, H * DICE_K); // 주사위 크기
     var groundY = Math.min(H * 0.66, H - S * 0.97), cx = W / 2 + driftX, lift = hop * H * 0.42;
     var cy = groundY - lift - S * 0.18;
+    // 어느 면으로 멈춰도 주사위 윗꼭짓점이 화면 위로 잘리지 않게, 크기를 한 번에 맞춰요 (굴리는 동안 크기가 변하지 않아요)
+    for (var it = 0; it < 20 && groundY - S * 0.18 - S * REST_TOP < 8; it++) {
+      S *= 0.97; groundY = Math.min(H * 0.66, H - S * 0.97);
+    }
+    cy = groundY - lift - S * 0.18;
 
     ctx.lineWidth = 1.5;
     ripples = ripples.filter(function (r) { return now - r.t0 < 1300; });
