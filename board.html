@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>짝꿍 만나러 가요! 말판 놀이</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* 온라인 말판 놀이: 폰·태블릿 하나를 돌려 가며 2~4명이 함께 해요.
+   주사위(./?embed=1)를 던지면 고른 쪽으로 두더지 말이 움직이고, 그림 칸에 서면 질문 카드가 저절로 떠요.
+   친구네 집에 들어가면 짝꿍 만나기 성공! */
+:root {
+  color-scheme: light;
+  --ink: #4a2a12; --muted: #8a5a30; --line: #d9934e; --paper: #fff4e0;
+  --purple: #7a3e9d; --boom: #e8402a;
+  --display: "Jua", "Gowun Dodum", sans-serif;
+  --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+* { box-sizing: border-box; min-width: 0; }
+html, body { height: 100%; margin: 0; }
+body { background: radial-gradient(120% 70% at 50% 40%, #fbd7a0, #eea461 70%, #e08c45); background-color: #eea461; color: var(--ink); font-family: var(--body); overflow: hidden; -webkit-tap-highlight-color: transparent; }
+button { font-family: inherit; }
+#app { height: 100%; display: grid; grid-template-rows: minmax(0, 1.45fr) minmax(0, 1fr); gap: 6px; padding: max(8px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+@media (min-aspect-ratio: 1/1) { #app { grid-template-rows: none; grid-template-columns: minmax(0, 1fr) minmax(300px, 38%); } }
+#boardwrap { min-height: 0; display: grid; place-items: center; container-type: size; }
+#board { position: relative; aspect-ratio: 1070 / 1470; height: 100%; max-width: 100%; max-height: 100%; width: auto; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 24px rgba(110,50,10,.25); }
+@container (max-aspect-ratio: 1070/1470) { #board { width: 100%; height: auto; } }
+#board > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
+.mark { position: absolute; width: 11%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 0; padding: 0; background: radial-gradient(circle, rgba(255,255,255,.95) 0 34%, rgba(255,214,90,.75) 35% 60%, rgba(255,214,90,0) 61%); box-shadow: 0 0 0 4px #fff, 0 0 0 8px var(--purple); animation: glow 1s ease-in-out infinite alternate; cursor: pointer; z-index: 3; }
+.mark span { position: absolute; left: 50%; top: -42%; transform: translateX(-50%); white-space: nowrap; font: 400 clamp(.75rem, 2.4cqh, 1.1rem) var(--display); color: #fff; background: var(--purple); padding: 2px 8px; border-radius: 10px; }
+@keyframes glow { from { transform: translate(-50%, -50%) scale(.9); } to { transform: translate(-50%, -50%) scale(1.08); } }
+.piece { position: absolute; width: 10.5%; transform: translate(-50%, -88%); transition: left .22s ease, top .22s ease; z-index: 2; pointer-events: none; filter: drop-shadow(0 3px 2px rgba(60,25,5,.45)); }
+.piece img { width: 100%; display: block; }
+.piece.turn { z-index: 4; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 6px #fff7) drop-shadow(0 3px 2px rgba(60,25,5,.45)); }
+.piece.turn::after { content: "▼"; position: absolute; left: 50%; top: -26%; transform: translateX(-50%); color: var(--purple); font-size: clamp(.8rem, 3cqh, 1.4rem); animation: bob .8s ease-in-out infinite alternate; text-shadow: 0 0 3px #fff; }
+.piece.hop { animation: hop .22s ease-out; }
+@keyframes hop { 40% { margin-top: -2.6%; } }
+@keyframes bob { to { margin-top: -4px; } }
+#side { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 6px; }
+#turn { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; background: rgba(255,244,224,.75); border: 2px solid var(--line); border-radius: 18px; padding: 6px 10px; }
+#turn img { height: clamp(40px, 7vh, 64px); width: auto; display: block; }
+#turn b { display: block; font: 400 clamp(1.05rem, 3.2vh, 1.4rem)/1.2 var(--display); color: var(--purple); }
+#turn span { display: block; font-size: clamp(.85rem, 2.3vh, 1rem); color: var(--ink); word-break: keep-all; }
+.tool { min-height: 40px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 20px; background: rgba(255,244,224,.6); color: var(--muted); font: .8125rem var(--body); cursor: pointer; white-space: nowrap; }
+.tools { display: flex; flex-direction: column; gap: 4px; }
+#dicebox { width: 100%; height: 100%; border: 0; display: block; background: transparent; }
+/* 덮개 화면들 */
+.over { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: rgba(74,42,18,.55); backdrop-filter: blur(3px); }
+.box { position: relative; width: min(100%, 460px); max-height: 100%; overflow: auto; background: var(--paper); border: 3px solid var(--line); border-radius: 28px; padding: 20px 18px; display: grid; gap: 14px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+.box h2 { margin: 0; font: 400 1.5rem/1.3 var(--display); color: var(--purple); word-break: keep-all; }
+.box p { margin: 0; word-break: keep-all; }
+.big { min-height: 60px; border: 0; border-radius: 18px; background: var(--purple); color: #fff; font: 400 1.3rem var(--display); cursor: pointer; box-shadow: 0 4px 0 #522468; padding: 0 18px; }
+.big:active { transform: translateY(2px); box-shadow: 0 2px 0 #522468; }
+.choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.choices.two { grid-template-columns: repeat(2, 1fr); }
+.choice { border: 3px solid var(--line); border-radius: 18px; background: #fff; padding: 6px; cursor: pointer; display: grid; gap: 4px; justify-items: center; font: 400 1rem var(--display); color: var(--ink); }
+.choice img { width: 100%; max-height: 120px; object-fit: contain; display: block; }
+.choice.house img { border-radius: 12px; object-fit: cover; aspect-ratio: 4/3; }
+.choice:disabled { opacity: .3; cursor: default; }
+.choice.num { font-size: 2rem; padding: 14px 0; }
+#card .ic img { width: 140px; height: 140px; display: block; margin: -4px auto -6px; }
+#card .faces { display: flex; justify-content: center; gap: 6px; }
+#card .faces img { height: 110px; }
+#card .q { font: 400 1.35rem/1.5 var(--display); color: var(--ink); }
+#card .key { font-size: .8125rem; color: var(--muted); }
+#card .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#card .again { background: #fff; color: var(--purple); border: 2px solid var(--purple); box-shadow: none; }
+#win .faces { display: flex; justify-content: center; gap: 8px; }
+#win .faces img { height: 130px; animation: jump .6s ease-in-out infinite alternate; }
+#win .faces img:nth-child(2) { animation-delay: .3s; }
+@keyframes jump { to { transform: translateY(-14px); } }
+.confetti { position: fixed; top: -20px; width: 10px; height: 16px; z-index: 11; pointer-events: none; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+.toast { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 5; background: var(--boom); color: #fff; font: 400 clamp(1.4rem, 6cqh, 2.4rem) var(--display); padding: 10px 22px; border-radius: 22px; box-shadow: 0 6px 0 #a3241a; animation: pop .35s cubic-bezier(.3,1.6,.5,1); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .mark, .piece.turn::after, #win .faces img, .box, .toast { animation: none; } .piece { transition: none; } }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="boardwrap"><div id="board">
+    <img src="img/board.webp" alt="짝꿍 만나러 가요! 말판">
+    <div id="layer"></div>
+  </div></div>
+  <aside id="side">
+    <div id="turn">
+      <img id="turnimg" src="img/mole/teal.webp" alt="">
+      <div><b id="turnname">짝꿍 만나러 가요!</b><span id="turnmsg">놀 친구를 정해요</span></div>
+      <div class="tools">
+        <button class="tool" id="sound" type="button" aria-pressed="true">소리 켜짐</button>
+        <button class="tool" id="restart" type="button">새 게임</button>
+      </div>
+    </div>
+    <iframe id="dicebox" src="./?embed=1" title="주사위"></iframe>
+  </aside>
+</div>
+
+<div id="setup" class="over"><div class="box" id="setupbox"></div></div>
+
+<div id="card" class="over" hidden role="dialog" aria-modal="true" aria-labelledby="ctitle">
+  <div class="box">
+    <div class="ic"></div>
+    <div class="faces"></div>
+    <h2 id="ctitle"></h2>
+    <p class="q" aria-live="polite"></p>
+    <p class="key"></p>
+    <div class="btns">
+      <button class="big again" type="button">다시 듣기</button>
+      <button class="big done" type="button">다 했어요</button>
+    </div>
+  </div>
+</div>
+
+<div id="win" class="over" hidden role="dialog" aria-modal="true" aria-labelledby="wtitle">
+  <div class="box">
+    <h2 id="wtitle">짝꿍 만나기 성공!</h2>
+    <div class="faces"></div>
+    <p class="msg" style="font: 400 1.2rem/1.5 var(--display)"></p>
+    <button class="big" id="again" type="button">다시 하기</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  /* ---------- 말판 지도 (말판 그림 1070×1470 기준 좌표) ----------
+     둥근 길 27칸을 시계 방향으로 적었어요. s: 그림 칸 종류 */
+  var BW = 1070, BH = 1470;
+  var RING = [
+    [264,383],[330,350],[410,305,"think"],[503,298],[555,298,"high"],[640,308,"check"],[733,352],[796,380],
+    [820,455],[855,550,"high"],[868,660,"think"],[868,728],[860,830,"keep"],[822,955,"pick"],[765,1028],[695,1090],
+    [614,1132],[530,1145,"check"],[440,1135],[355,1095],[288,1035,"high"],[240,955,"think"],[198,830,"keep"],[185,722,"high"],
+    [189,655],[215,560,"pick"],[237,454]
+  ];
+  // 집: 길과 만나는 칸(j), 집 앞 디딤칸(stub)
+  var HOUSES = {
+    tl: { name: "나무뿌리 집", pos: [205,262], j: 0 },
+    tr: { name: "새싹 집", pos: [858,262], j: 7 },
+    br: { name: "돌멩이 집", pos: [862,1245], j: 15, stub: [695,1182] },
+    bl: { name: "단풍잎 집", pos: [205,1245], j: 19, stub: [353,1186] }
+  };
+  var MOLES = ["teal", "green", "overall", "orange", "yellow", "purple"];
+  var Q = {
+    think: { name: "생각해요", key: "내 생각도 소중해요. 먼저 말해 봐요.", list: [
+      { t: "AI한테 묻기 전에 내 생각 먼저! 바람은 어디서 올까?", a: "audio/think1.mp3" },
+      { t: "AI한테 묻기 전에 내 생각 먼저! 두더지는 땅속에서 뭘 먹을까?", a: "audio/think2.mp3" },
+      { t: "AI가 “돌은 아무도 못 움직여요”라고 했어. 너는 어떻게 하면 움직일 수 있을 것 같아?", a: "audio/think3.mp3" }
+    ]},
+    check: { name: "확인해요", key: "AI 말도 한 번 더 확인해요.", list: [
+      { t: "AI가 “바람이 불면 구름이 다 사라져요”라고 했어. 정말인지 어떻게 알아볼까?", a: "audio/check1.mp3" },
+      { t: "AI가 “이 돌은 아무도 못 움직여요”라고 했어. 진짜인지 어떻게 알아볼까?", a: "audio/check2.mp3" },
+      { t: "AI 말이 맞는지 헷갈릴 때, 누구에게 물어볼 수 있을까?", a: "audio/check3.mp3" }
+    ]},
+    pick: { name: "골라요", key: "AI는 도와줄 뿐, 고르는 건 나예요.", list: [
+      { t: "AI가 “초코 맛이 제일 인기 있어요”라고 했어. 너는 무슨 맛 아이스크림을 고를래?", a: "audio/pick1.mp3" },
+      { t: "AI가 “오늘은 블록 놀이를 하세요”라고 했어. 그런데 너는 그림 그리기가 하고 싶어. 어떻게 할래?", a: "audio/pick2.mp3" },
+      { t: "AI가 공룡 책이랑 우주 책을 추천했어. 너는 어떤 책을 고를래?", a: "audio/pick3.mp3" }
+    ]},
+    keep: { name: "지켜요", key: "내 정보는 소중해요. 헷갈리면 어른에게 먼저 물어봐요.", list: [
+      { t: "AI가 “어디 살아요? 주소를 알려 주세요” 하면 어떻게 할까?", a: "audio/keep1.mp3" },
+      { t: "AI가 “이름이랑 유치원 이름을 알려 주세요” 하면 어떻게 할까?", a: "audio/keep2.mp3" },
+      { t: "짝꿍 사진을 AI에 올리고 싶어. 먼저 누구에게 물어봐야 할까?", a: "audio/keep3.mp3" }
+    ]},
+    high: { name: "하이파이브", key: "짝꿍과 하이파이브하며 말해요!", list: [
+      { t: "짝꿍과 하이파이브! \u201c너랑 놀아서 참 좋아!\u201d", a: "audio/high1.mp3" }
+    ]}
+  };
+
+  var QIMG = { think: "img/think.png?v=2", check: "img/check.png?v=2", pick: "img/pick.png?v=2", keep: "img/keep.png?v=2", high: "img/high.png?v=2" };
+
+  var layer = document.getElementById("layer");
+  var dice = document.getElementById("dicebox");
+  var turnImg = document.getElementById("turnimg"), turnName = document.getElementById("turnname"), turnMsg = document.getElementById("turnmsg");
+  var soundBtn = document.getElementById("sound");
+  var soundOn = true, players = [], cur = 0, busy = false, over = false;
+
+  function pct(xy) { return { left: (xy[0] / BW * 100) + "%", top: (xy[1] / BH * 100) + "%" }; }
+  // 칸 이름: "r3"(길), "s-br"(집 앞 디딤칸), "h-tl"(집)
+  function xyOf(node) {
+    if (node[0] === "r") return RING[+node.slice(1)];
+    if (node[0] === "s") return HOUSES[node.slice(2)].stub;
+    return HOUSES[node.slice(2)].pos;
+  }
+  function ownerOf(hk) { for (var i = 0; i < players.length; i++) if (players[i].house === hk) return i; return -1; }
+  // 친구네 집이면(내 집 아님, 누군가 사는 집) 그 집 열쇠를 돌려줘요
+  function friendHouseAt(ringIdx, me) {
+    for (var k in HOUSES) if (HOUSES[k].j === ringIdx) { var o = ownerOf(k); if (o >= 0 && o !== me) return k; }
+    return null;
+  }
+  function plan(p, steps, dir) {
+    var me = players.indexOf(p), node = p.node, path = [];
+    for (var n = steps; n > 0; n--) {
+      var next;
+      if (node[0] === "h") { // 집에서 나가기
+        var hk = node.slice(2); next = HOUSES[hk].stub ? "s-" + hk : "r" + HOUSES[hk].j;
+      } else if (node[0] === "s") {
+        var sk = node.slice(2);
+        next = (ownerOf(sk) >= 0 && ownerOf(sk) !== me) ? "h-" + sk : "r" + HOUSES[sk].j;
+      } else {
+        var i = +node.slice(1), fk = friendHouseAt(i, me);
+        if (fk) next = HOUSES[fk].stub ? "s-" + fk : "h-" + fk; // 친구네 집 앞에 오면 들어가요
+        else next = "r" + ((i + dir + RING.length) % RING.length);
+      }
+      path.push(next); node = next;
+      if (node[0] === "h") break;
+    }
+    return path;
+  }
+  // 친구네 집 앞(디딤칸 포함)에서 출발하면 방향 없이 바로 들어가요
+  function forced(p) {
+    var me = players.indexOf(p);
+    if (p.node[0] === "s") { var k = p.node.slice(2); return ownerOf(k) >= 0 && ownerOf(k) !== me; }
+    if (p.node[0] === "r") return !!friendHouseAt(+p.node.slice(1), me);
+    return false;
+  }
+
+  /* ---------- 그리기 ---------- */
+  function render() {
+    layer.querySelectorAll(".piece").forEach(function (e) { e.remove(); });
+    var groups = {};
+    players.forEach(function (p, i) { (groups[p.node] = groups[p.node] || []).push(i); });
+    Object.keys(groups).forEach(function (node) {
+      var list = groups[node], xy = xyOf(node);
+      list.forEach(function (i, k) {
+        var p = players[i];
+        if (!p.el) { p.el = document.createElement("div"); p.el.className = "piece"; p.el.innerHTML = '<img src="img/mole/' + p.mole + '.webp" alt="' + (i + 1) + '번 친구">'; }
+        var off = (k - (list.length - 1) / 2) * 34;
+        var pos = pct([xy[0] + off, xy[1]]);
+        p.el.style.left = pos.left; p.el.style.top = pos.top;
+        p.el.classList.toggle("turn", i === cur && !over);
+        layer.appendChild(p.el);
+      });
+    });
+  }
+  function clearMarks() { layer.querySelectorAll(".mark").forEach(function (e) { e.remove(); }); }
+  function toast(text, ms) {
+    var t = document.createElement("div"); t.className = "toast"; t.textContent = text; layer.appendChild(t);
+    setTimeout(function () { t.remove(); }, ms || 1400);
+  }
+  function setTurnBar(msg) {
+    var p = players[cur];
+    turnImg.src = "img/mole/" + p.mole + ".webp";
+    turnName.textContent = (cur + 1) + "번 친구 차례";
+    turnMsg.textContent = msg;
+  }
+  function post(o) { try { dice.contentWindow.postMessage(o, "*"); } catch (e) {} }
+
+  /* ---------- 차례 ---------- */
+  function startTurn() {
+    busy = false; render();
+    setTurnBar("주사위를 던져요!");
+    post({ jj: "lock", on: false, text: (cur + 1) + "번 친구, 던져요!" });
+  }
+  function nextTurn() { if (over) return; cur = (cur + 1) % players.length; startTurn(); }
+
+  window.addEventListener("message", function (e) {
+    var d = e.data || {};
+    if (d.jj !== "roll" || e.source !== dice.contentWindow || busy || over || !players.length) return;
+    busy = true;
+    var p = players[cur];
+    if (!d.n) { setTurnBar("펑! 이번엔 쉬어 가요"); toast("펑! 쉬어 가요"); setTimeout(nextTurn, 1700); return; }
+    if (forced(p)) { setTurnBar(d.n + "칸! 짝꿍네 집으로 쏙!"); setTimeout(function () { move(p, plan(p, d.n, 1)); }, 600); return; }
+    var a = plan(p, d.n, 1), b = plan(p, d.n, -1);
+    setTurnBar(d.n + "칸! 반짝이는 칸 중에 갈 곳을 눌러요");
+    var ends = [a];
+    if (b[b.length - 1] !== a[a.length - 1]) ends.push(b);
+    ends.forEach(function (path) {
+      var m = document.createElement("button"); m.type = "button"; m.className = "mark";
+      var pos = pct(xyOf(path[path.length - 1])); m.style.left = pos.left; m.style.top = pos.top;
+      m.setAttribute("aria-label", "여기로 가기");
+      m.innerHTML = "<span>여기!</span>";
+      m.addEventListener("click", function () { clearMarks(); move(p, path); });
+      layer.appendChild(m);
+    });
+  });
+
+  function move(p, path) {
+    unlockAudio();
+    var k = 0;
+    (function step() {
+      if (k >= path.length) { land(p); return; }
+      p.node = path[k++]; render();
+      p.el.classList.remove("hop"); void p.el.offsetWidth; p.el.classList.add("hop");
+      tick();
+      setTimeout(step, 300);
+    })();
+  }
+  function land(p) {
+    var me = players.indexOf(p);
+    if (p.node[0] === "h") { win(me, ownerOf(p.node.slice(2))); return; }
+    var mates = players.filter(function (o, i) { return i !== me && o.node === p.node; });
+    if (mates.length) { showCard("meet", p, mates); return; }
+    var s = p.node[0] === "r" ? RING[+p.node.slice(1)][2] : null;
+    if (s) { showCard(s, p); return; }
+    setTimeout(nextTurn, 500);
+  }
+
+  /* ---------- 카드 ---------- */
+  var card = document.getElementById("card"), cIc = card.querySelector(".ic"), cFaces = card.querySelector(".faces");
+  var cTitle = document.getElementById("ctitle"), cQ = card.querySelector(".q"), cKey = card.querySelector(".key");
+  var bag = {}, curItem = null, player = null, koVoice = null;
+  function nextIndex(k) {
+    var n = Q[k].list.length;
+    if (!bag[k] || !bag[k].length) { var a = []; for (var i = 0; i < n; i++) a.push(i); for (var j = n - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)), t = a[j]; a[j] = a[r]; a[r] = t; } bag[k] = a; }
+    return bag[k].shift();
+  }
+  function showCard(kind, p, mates) {
+    var k = kind === "meet" ? "high" : kind, g = Q[k], item = g.list[nextIndex(k)];
+    if (typeof item === "string") item = { t: item };
+    curItem = item;
+    cIc.innerHTML = '<img src="' + QIMG[k] + '" alt="">';
+    cFaces.innerHTML = "";
+    if (kind === "meet") {
+      cIc.innerHTML = "";
+      [p].concat(mates).forEach(function (o) { cFaces.innerHTML += '<img src="img/mole/' + o.mole + '.webp" alt="">'; });
+      cTitle.textContent = "길에서 친구를 만났어요!"; cTitle.hidden = false;
+      cQ.textContent = "하이파이브! “너랑 놀아서 참 좋아!”";
+      cKey.textContent = "만난 친구와 손바닥을 마주쳐요";
+    } else {
+      cTitle.textContent = kind === "high" ? "하이파이브 칸!" : g.name;
+      cTitle.hidden = true; // 그림 안에 이름이 들어 있어요
+      cQ.textContent = item.t; cKey.textContent = g.key;
+    }
+    card.hidden = false; say(item);
+    setTurnBar(kind === "meet" || kind === "high" ? "하이파이브 해요!" : "질문에 대답해요");
+    setTimeout(function () { try { card.querySelector(".done").focus(); } catch (e) {} }, 50);
+  }
+  card.querySelector(".again").addEventListener("click", function () { say(curItem); });
+  card.querySelector(".done").addEventListener("click", function () { stopVoice(); card.hidden = true; nextTurn(); });
+
+  /* ---------- 소리 ---------- */
+  var actx = null;
+  function unlockAudio() { try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) {} }
+  function tick() {
+    if (!soundOn || !actx) return;
+    try { var t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain(); o.type = "sine"; o.frequency.setValueAtTime(660, t); o.frequency.exponentialRampToValueAtTime(880, t + .06); g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.001, t + .12); o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + .13); } catch (e) {}
+  }
+  function stopVoice() { try { speechSynthesis.cancel(); } catch (e) {} if (player) { try { player.pause(); } catch (e) {} player = null; } }
+  function speak(t) {
+    if (!window.speechSynthesis) return;
+    try { var u = new SpeechSynthesisUtterance(t.replace(/[“”"]/g, "")); u.lang = "ko-KR"; u.rate = .9; if (koVoice) u.voice = koVoice; speechSynthesis.speak(u); } catch (e) {}
+  }
+  function say(item) {
+    stopVoice(); if (!soundOn || !item) return;
+    if (item.a) { try { player = new Audio(item.a); player.play().catch(function () { speak(item.t); }); return; } catch (e) {} }
+    speak(item.t);
+  }
+  try { var pv = function () { koVoice = speechSynthesis.getVoices().filter(function (v) { return /^ko/i.test(v.lang); })[0] || null; }; pv(); speechSynthesis.onvoiceschanged = pv; } catch (e) {}
+  soundBtn.addEventListener("click", function () {
+    soundOn = !soundOn; soundBtn.textContent = soundOn ? "소리 켜짐" : "소리 꺼짐"; soundBtn.setAttribute("aria-pressed", String(soundOn));
+    if (!soundOn) stopVoice(); post({ jj: "sound", on: soundOn });
+  });
+
+  /* ---------- 성공 ---------- */
+  var winEl = document.getElementById("win");
+  function win(a, b) {
+    over = true; render(); post({ jj: "lock", on: true });
+    var pa = players[a], pb = players[b];
+    winEl.querySelector(".faces").innerHTML = '<img src="img/mole/' + pa.mole + '.webp" alt=""><img src="img/mole/' + pb.mole + '.webp" alt="">';
+    winEl.querySelector(".msg").textContent = (a + 1) + "번 친구가 " + (b + 1) + "번 친구네 " + HOUSES[pb.house].name + "에 놀러 왔어요! 다 같이 “어서 와!”";
+    turnName.textContent = "짝꿍 만나기 성공!"; turnMsg.textContent = "모두 함께 해냈어요";
+    winEl.hidden = false; confetti();
+  }
+  function confetti() {
+    var colors = ["#7a3e9d", "#e7b416", "#e0526a", "#3d7fd0", "#6fb04a"];
+    for (var i = 0; i < 60; i++) {
+      var c = document.createElement("div"); c.className = "confetti";
+      c.style.left = Math.random() * 100 + "vw"; c.style.background = colors[i % colors.length];
+      c.style.animationDuration = (2 + Math.random() * 2) + "s"; c.style.animationDelay = Math.random() * .8 + "s";
+      document.body.appendChild(c); setTimeout(function (el) { el.remove(); }.bind(null, c), 4800);
+    }
+  }
+  document.getElementById("again").addEventListener("click", function () { winEl.hidden = true; openSetup(); });
+  document.getElementById("restart").addEventListener("click", function () { if (!players.length || confirm("처음부터 다시 할까요?")) openSetup(); });
+
+  /* ---------- 시작 준비 ---------- */
+  var setup = document.getElementById("setup"), sbox = document.getElementById("setupbox");
+  var want = 0, draft = [];
+  function openSetup() {
+    stopVoice(); card.hidden = true; winEl.hidden = true; clearMarks();
+    players.forEach(function (p) { if (p.el) p.el.remove(); });
+    players = []; draft = []; cur = 0; over = false; busy = true;
+    post({ jj: "lock", on: true });
+    turnName.textContent = "짝꿍 만나러 가요!"; turnMsg.textContent = "놀 친구를 정해요";
+    setup.hidden = false;
+    sbox.innerHTML = '<h2>몇 명이 함께 놀아요?</h2><div class="choices"></div><p style="color:var(--muted);font-size:.9rem">폰이나 태블릿 하나를 차례대로 돌려 가며 놀아요</p>';
+    [2, 3, 4].forEach(function (n) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "choice num"; b.textContent = n + "명";
+      b.addEventListener("click", function () { unlockAudio(); want = n; pickMole(); });
+      sbox.querySelector(".choices").appendChild(b);
+    });
+  }
+  function pickMole() {
+    var k = draft.length;
+    sbox.innerHTML = '<h2>' + (k + 1) + '번 친구, 내 두더지를 골라요</h2><div class="choices"></div>';
+    MOLES.forEach(function (m) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "choice";
+      b.innerHTML = '<img src="img/mole/' + m + '.webp" alt="두더지">';
+      b.disabled = draft.some(function (d) { return d.mole === m; });
+      b.addEventListener("click", function () { draft.push({ mole: m }); pickHouse(); });
+      sbox.querySelector(".choices").appendChild(b);
+    });
+  }
+  function pickHouse() {
+    var k = draft.length - 1;
+    sbox.innerHTML = '<h2>' + (k + 1) + '번 친구, 내 집을 골라요</h2><div class="choices two"></div>';
+    ["tl", "tr", "bl", "br"].forEach(function (h) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "choice house";
+      b.innerHTML = '<img src="img/house_' + h + '.webp" alt="">' + HOUSES[h].name;
+      b.disabled = draft.some(function (d) { return d.house === h; });
+      b.addEventListener("click", function () {
+        draft[k].house = h;
+        if (draft.length < want) pickMole(); else begin();
+      });
+      sbox.querySelector(".choices").appendChild(b);
+    });
+  }
+  function begin() {
+    players = draft.map(function (d) { return { mole: d.mole, house: d.house, node: "h-" + d.house }; });
+    setup.hidden = true; cur = 0; startTurn();
+  }
+  dice.addEventListener("load", function () {
+    post({ jj: "sound", on: soundOn });
+    if (players.length && !busy && !over) post({ jj: "lock", on: false, text: (cur + 1) + "번 친구, 던져요!" }); else post({ jj: "lock", on: true });
+  });
+  openSetup();
+})();
+</script>
+</body>
+</html>

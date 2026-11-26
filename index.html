@@ -125,6 +125,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
 #inviteqr svg { display: block; width: 100%; height: auto; }
 #inviteqr svg path, #inviteqr svg rect[fill="black"] { fill: #3a1d4f; }
 #inviteclose { min-height: 52px; border: 0; border-radius: 16px; background: var(--purple); color: #fff; font: 400 1.15rem var(--display); cursor: pointer; box-shadow: 0 4px 0 #522468; }
+html.embed header, html.embed #qbar, html.embed #history, html.embed #conn, html.embed #table, html.embed #who { display: none !important; }
+html.embed body { background: transparent; }
+html.embed #app { grid-template-rows: minmax(0, 1fr) auto auto; gap: 2px; padding: 0 6px 6px; }
+html.embed #result { min-height: 0; }
+html.embed #number { font-size: clamp(1.5rem, 11vh, 2.6rem); }
+html.embed #number.idle { font-size: clamp(.95rem, 6vh, 1.25rem); }
+html.embed #hint { font-size: .85rem; min-height: 0; }
+html.embed #throw { height: clamp(44px, 16vh, 60px); }
 [hidden] { display: none !important; }
 </style>
 </head>
@@ -185,6 +193,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
 <script>
 (function () {
   "use strict";
+  // 말판 게임(board.html) 안에 넣을 때: 주소에 ?embed=1 → 주사위만 보여 주고 결과를 말판에 알려요
+  var EMBED = /[?&]embed=1/.test(location.search);
+  if (EMBED) document.documentElement.classList.add("embed");
+  var extLock = EMBED;
   var canvas = document.getElementById("dice");
   var ctx = canvas.getContext("2d");
   var numberEl = document.getElementById("number");
@@ -310,7 +322,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   }
 
   /* ---------- 버튼 ---------- */
-  function canThrow() { return !rolling && !queue.length && !qOpen; }
+  function canThrow() { return !rolling && !queue.length && !qOpen && !extLock; }
   function renderBtn() { throwBtn.disabled = !canThrow(); }
 
   function boomSound() {
@@ -360,6 +372,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
       hintEl.textContent = "이번엔 쉬어 가요";
       bursts.push({ t0: performance.now() });
       boomSound();
+    }
+    if (EMBED) {
+      hintEl.textContent = fc.n ? "말이 갈 쪽을 골라요" : "이번엔 쉬어 가요";
+      extLock = true;
+      try { parent.postMessage({ jj: "roll", n: fc.n || 0 }, "*"); } catch (e) {}
     }
     history.unshift({ v: r.result, s: r.seat === "me" ? 1 : 2 });
     history = history.slice(0, 8);
@@ -596,6 +613,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
                  같이 놀 폰은 화면의 '함께할 폰 연결하기' QR로만 들어올 수 있어요 */
   var FESTA_LAST_DAY = "2026-11-28"; // 페스타 마지막 날. "2026-12-05" 처럼 적으면, 그 다음 날부터 테이블 QR도 언제든 놀이로 열려요
   var params = new URLSearchParams(location.search);
+  if (EMBED) params = new URLSearchParams("t=embed-local");
   var todayKST = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
   var festaOver = !!FESTA_LAST_DAY && todayKST > FESTA_LAST_DAY;
   var room = (params.get("r") || "").replace(/[^0-9a-z]/g, "").slice(0, 16);
@@ -824,8 +842,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     showQ(k, idx, false);
   }
   setInterval(renderQBtns, 300);
-  connect(0);
-  setInterval(function () { hello(); showConn(); }, 10000);
+  if (EMBED) {
+    window.addEventListener("message", function (e) {
+      var d = e.data || {};
+      if (d.jj === "lock") { extLock = !!d.on; if (!d.on) { numberEl.className = "idle"; numberEl.textContent = d.text || "주사위를 던져 보세요"; hintEl.textContent = " "; whoEl.textContent = " "; } renderBtn(); }
+      if (d.jj === "sound") { soundOn = !!d.on; }
+    });
+    renderBtn();
+  } else {
+    connect(0);
+    setInterval(function () { hello(); showConn(); }, 10000);
+  }
 
   resize();
   renderBtn();
