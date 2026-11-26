@@ -11,7 +11,7 @@
    IDEA: 말판의 흙빛 땅 위에 알록달록 팔면체 주사위를 굴린다
    PICTURE: 가운데 큰 팔면체 주사위, 아래 큰 결과 글자
    COLOUR and TYPE: 노을빛 흙 바탕, 보라 버튼(말판 제목 색), 1번 빨강·2번 파랑 / Jua + Gowun Dodum
-   LAYOUT: 위 두 사람 패, 가운데 주사위, 아래 결과와 던지기 버튼 */
+   LAYOUT: 최대 4명(폰 여러 대), 가운데 주사위, 아래 결과와 던지기 버튼 */
 :root {
   color-scheme: light;
   --ink: #4a2a12; --muted: #8a5a30; --line: #d9934e; --paper: #fff4e0;
@@ -724,7 +724,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     qTitle.textContent = g.name;
     qText.textContent = item.t;
     qKey.textContent = g.key;
-    qFrom.textContent = mine ? "" : "짝꿍 폰에서 고른 칸이에요";
+    qFrom.textContent = mine ? "" : "다른 친구가 고른 칸이에요";
     qFrom.className = mine ? "from" : "from s2";
     qAgain.hidden = false;
     qEl.hidden = false;
