@@ -21,16 +21,16 @@
 html, body { height: 100%; margin: 0; }
 body { background: radial-gradient(120% 70% at 50% 40%, #fbd7a0, #eea461 70%, #e08c45); background-color: #eea461; color: var(--ink); font-family: var(--body); overflow: hidden; -webkit-tap-highlight-color: transparent; }
 button { font-family: inherit; }
-#app { height: 100%; display: grid; grid-template-rows: minmax(0, 1.45fr) minmax(0, 1fr); gap: 6px; padding: max(8px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
-@media (min-aspect-ratio: 1/1) { #app { grid-template-rows: none; grid-template-columns: minmax(0, 1fr) minmax(300px, 38%); } }
+#app { height: 100%; display: grid; grid-template-columns: minmax(0, 7fr) minmax(220px, 3fr); gap: 6px; padding: max(8px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
 #boardwrap { min-height: 0; display: grid; place-items: center; container-type: size; }
-#board { position: relative; aspect-ratio: 1070 / 1470; height: 100%; max-width: 100%; max-height: 100%; width: auto; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 24px rgba(110,50,10,.25); }
-@container (max-aspect-ratio: 1070/1470) { #board { width: 100%; height: auto; } }
+#board { position: relative; aspect-ratio: 1536 / 1024; width: 100%; height: auto; max-width: 100%; max-height: 100%; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 24px rgba(110,50,10,.25); }
+@container (min-aspect-ratio: 1536/1024) { #board { width: auto; height: 100%; } }
 #board > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; -webkit-user-drag: none; }
-.mark { position: absolute; width: 11%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 0; padding: 0; background: radial-gradient(circle, rgba(255,255,255,.95) 0 34%, rgba(255,214,90,.75) 35% 60%, rgba(255,214,90,0) 61%); box-shadow: 0 0 0 4px #fff, 0 0 0 8px var(--purple); animation: glow 1s ease-in-out infinite alternate; cursor: pointer; z-index: 3; }
-.mark span { position: absolute; left: 50%; top: -42%; transform: translateX(-50%); white-space: nowrap; font: 400 clamp(.75rem, 2.4cqh, 1.1rem) var(--display); color: #fff; background: var(--purple); padding: 2px 8px; border-radius: 10px; }
-@keyframes glow { from { transform: translate(-50%, -50%) scale(.9); } to { transform: translate(-50%, -50%) scale(1.08); } }
-.piece { position: absolute; width: 10.5%; transform: translate(-50%, -88%); transition: left .22s ease, top .22s ease; z-index: 2; pointer-events: none; filter: drop-shadow(0 3px 2px rgba(60,25,5,.45)); }
+.spot { position: absolute; width: 6.6%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 0; padding: 0; background: transparent; cursor: pointer; z-index: 3; }
+.spot.hint::before { content: ""; position: absolute; inset: 8%; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.9) 0 25%, rgba(255,224,110,.55) 45%, rgba(255,224,110,0) 70%); animation: twinkle .9s ease-in-out infinite alternate; }
+.spot.hint::after { content: "✦"; position: absolute; right: -2%; top: -8%; font-size: clamp(.7rem, 2.6cqh, 1.2rem); color: #ffd84a; text-shadow: 0 0 4px #fff, 0 0 2px #a86a00; animation: twinkle .7s ease-in-out infinite alternate-reverse; }
+@keyframes twinkle { from { opacity: .35; transform: scale(.85); } to { opacity: 1; transform: scale(1.05); } }
+.piece { position: absolute; width: 6.6%; transform: translate(-50%, -88%); transition: left .22s ease, top .22s ease; z-index: 2; pointer-events: none; filter: drop-shadow(0 3px 2px rgba(60,25,5,.45)); }
 .piece img { width: 100%; display: block; }
 .piece.turn { z-index: 4; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 6px #fff7) drop-shadow(0 3px 2px rgba(60,25,5,.45)); }
 .piece.turn::after { content: "▼"; position: absolute; left: 50%; top: -26%; transform: translateX(-50%); color: var(--purple); font-size: clamp(.8rem, 3cqh, 1.4rem); animation: bob .8s ease-in-out infinite alternate; text-shadow: 0 0 3px #fff; }
@@ -38,13 +38,19 @@ button { font-family: inherit; }
 @keyframes hop { 40% { margin-top: -2.6%; } }
 @keyframes bob { to { margin-top: -4px; } }
 #side { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 6px; }
-#turn { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; background: rgba(255,244,224,.75); border: 2px solid var(--line); border-radius: 18px; padding: 6px 10px; }
+#turn { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 10px; background: rgba(255,244,224,.75); border: 2px solid var(--line); border-radius: 18px; padding: 6px 10px; }
 #turn img { height: clamp(40px, 7vh, 64px); width: auto; display: block; }
 #turn b { display: block; font: 400 clamp(1.05rem, 3.2vh, 1.4rem)/1.2 var(--display); color: var(--purple); }
 #turn span { display: block; font-size: clamp(.85rem, 2.3vh, 1rem); color: var(--ink); word-break: keep-all; }
 .tool { min-height: 40px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 20px; background: rgba(255,244,224,.6); color: var(--muted); font: .8125rem var(--body); cursor: pointer; white-space: nowrap; }
-.tools { display: flex; flex-direction: column; gap: 4px; }
+.tools { grid-column: 1 / -1; display: flex; gap: 6px; justify-content: flex-end; }
 #dicebox { width: 100%; height: 100%; border: 0; display: block; background: transparent; }
+#stagebox { position: relative; min-height: 0; }
+#hintbtn { display: inline-grid; grid-auto-flow: column; align-items: center; gap: 4px; min-height: 40px; padding: 0 10px 0 6px; border: 1.5px solid var(--purple); border-radius: 20px; background: #fff; color: var(--purple); font: 400 .875rem var(--display); cursor: pointer; }
+#hintbtn svg { width: 30px; height: 30px; }
+#hintbtn[aria-pressed="true"] { background: #fff4c2; }
+/* 칸 카드: 말판을 가리지 않게 오른쪽(세로 화면에선 아래) 자리에 떠요 */
+#card { position: absolute; inset: 0; z-index: 5; display: grid; align-content: safe center; gap: 8px; padding: 12px; text-align: center; background: var(--paper); border: 3px solid var(--line); border-radius: 22px; box-shadow: 0 8px 20px rgba(110,50,10,.2); overflow: auto; animation: pop .3s cubic-bezier(.3,1.6,.5,1); }
 /* 덮개 화면들 */
 .over { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: rgba(74,42,18,.55); backdrop-filter: blur(3px); }
 .box { position: relative; width: min(100%, 460px); max-height: 100%; overflow: auto; background: var(--paper); border: 3px solid var(--line); border-radius: 28px; padding: 20px 18px; display: grid; gap: 14px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
@@ -60,11 +66,13 @@ button { font-family: inherit; }
 .choice.house img { border-radius: 12px; object-fit: cover; aspect-ratio: 4/3; }
 .choice:disabled { opacity: .3; cursor: default; }
 .choice.num { font-size: 2rem; padding: 14px 0; }
-#card .ic img { width: 140px; height: 140px; display: block; margin: -4px auto -6px; }
+#card .ic img { width: clamp(64px, 16vh, 120px); height: auto; display: block; margin: 0 auto; }
 #card .faces { display: flex; justify-content: center; gap: 6px; }
-#card .faces img { height: 110px; }
-#card .q { font: 400 1.35rem/1.5 var(--display); color: var(--ink); }
-#card .key { font-size: .8125rem; color: var(--muted); }
+#card .faces img { height: clamp(56px, 14vh, 100px); }
+#card h2 { margin: 0; font: 400 1.2rem var(--display); color: var(--purple); }
+#card .q { margin: 0; font: 400 clamp(1rem, 3.2vh, 1.3rem)/1.45 var(--display); color: var(--ink); word-break: keep-all; }
+#card .key { margin: 0; font-size: .8125rem; color: var(--muted); word-break: keep-all; }
+#card .big { min-height: 48px; font-size: 1.1rem; }
 #card .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 #card .again { background: #fff; color: var(--purple); border: 2px solid var(--purple); box-shadow: none; }
 #win .faces { display: flex; justify-content: center; gap: 8px; }
@@ -73,45 +81,56 @@ button { font-family: inherit; }
 @keyframes jump { to { transform: translateY(-14px); } }
 .confetti { position: fixed; top: -20px; width: 10px; height: 16px; z-index: 11; pointer-events: none; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+.toast.soft { background: var(--purple); box-shadow: 0 4px 0 #522468; font-size: clamp(1rem, 4cqh, 1.5rem); }
 .toast { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 5; background: var(--boom); color: #fff; font: 400 clamp(1.4rem, 6cqh, 2.4rem) var(--display); padding: 10px 22px; border-radius: 22px; box-shadow: 0 6px 0 #a3241a; animation: pop .35s cubic-bezier(.3,1.6,.5,1); pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .mark, .piece.turn::after, #win .faces img, .box, .toast { animation: none; } .piece { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .spot.hint::before, .spot.hint::after, .piece.turn::after, #win .faces img, .box, .toast { animation: none; } .piece { transition: none; } }
+#rotate { display: none; text-align: center; font-size: .85rem; color: var(--muted); }
+/* 세로 화면: 말판 위, 주사위 아래 (가로로 돌리면 더 크게 보여요) */
+@media (max-aspect-ratio: 1/1) {
+  #app { grid-template-columns: none; grid-template-rows: auto auto minmax(0, 1fr); }
+  #boardwrap { container-type: normal; }
+  #board { width: 100%; height: auto; }
+  #rotate { display: block; }
+}
 [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="boardwrap"><div id="board">
-    <img src="img/board.webp" alt="짝꿍 만나러 가요! 말판">
+    <img src="img/board.webp?v=2" alt="짝꿍 만나러 가요! 말판">
     <div id="layer"></div>
   </div></div>
+  <div id="rotate">폰을 가로로 돌리면 말판이 더 크게 보여요</div>
   <aside id="side">
     <div id="turn">
       <img id="turnimg" src="img/mole/teal.webp" alt="">
       <div><b id="turnname">짝꿍 만나러 가요!</b><span id="turnmsg">놀 친구를 정해요</span></div>
       <div class="tools">
+        <button id="hintbtn" type="button" aria-pressed="false" hidden title="갈 수 있는 칸 보기"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 5a10 10 0 0 0-6 18c1.4 1.1 2 2.3 2 3.6V28h8v-1.4c0-1.3.6-2.5 2-3.6A10 10 0 0 0 20 5z" fill="#ffe27a" stroke="#7a3e9d" stroke-width="2"/><path d="M16 31h8M17 34.5h6" stroke="#7a3e9d" stroke-width="2" stroke-linecap="round"/><path d="M4 20l4-3v6zM36 20l-4-3v6z" fill="#7a3e9d"/></svg>힌트</button>
         <button class="tool" id="sound" type="button" aria-pressed="true">소리 켜짐</button>
         <button class="tool" id="restart" type="button">새 게임</button>
       </div>
     </div>
-    <iframe id="dicebox" src="./?embed=1" title="주사위"></iframe>
+    <div id="stagebox">
+      <iframe id="dicebox" src="./?embed=1" title="주사위"></iframe>
+      <div id="card" hidden role="region" aria-live="polite" aria-labelledby="ctitle">
+        <div class="ic"></div>
+        <div class="faces"></div>
+        <h2 id="ctitle"></h2>
+        <p class="q"></p>
+        <p class="key"></p>
+        <div class="btns">
+          <button class="big again" type="button">다시 듣기</button>
+          <button class="big done" type="button">다 했어요</button>
+        </div>
+      </div>
+    </div>
   </aside>
 </div>
 
 <div id="setup" class="over"><div class="box" id="setupbox"></div></div>
 
-<div id="card" class="over" hidden role="dialog" aria-modal="true" aria-labelledby="ctitle">
-  <div class="box">
-    <div class="ic"></div>
-    <div class="faces"></div>
-    <h2 id="ctitle"></h2>
-    <p class="q" aria-live="polite"></p>
-    <p class="key"></p>
-    <div class="btns">
-      <button class="big again" type="button">다시 듣기</button>
-      <button class="big done" type="button">다 했어요</button>
-    </div>
-  </div>
-</div>
 
 <div id="win" class="over" hidden role="dialog" aria-modal="true" aria-labelledby="wtitle">
   <div class="box">
@@ -126,19 +145,19 @@ button { font-family: inherit; }
 (function () {
   /* ---------- 말판 지도 (말판 그림 1070×1470 기준 좌표) ----------
      둥근 길 27칸을 시계 방향으로 적었어요. s: 그림 칸 종류 */
-  var BW = 1070, BH = 1470;
+  var BW = 1536, BH = 1024;
   var RING = [
-    [264,383],[330,350],[410,305,"think"],[503,298],[555,298,"high"],[640,308,"check"],[733,352],[796,380],
-    [820,455],[855,550,"high"],[868,660,"think"],[868,728],[860,830,"keep"],[822,955,"pick"],[765,1028],[695,1090],
-    [614,1132],[530,1145,"check"],[440,1135],[355,1095],[288,1035,"high"],[240,955,"think"],[198,830,"keep"],[185,722,"high"],
-    [189,655],[215,560,"pick"],[237,454]
+    [347,250],[420,223],[530,190,"think"],[639,172],[739,170,"high"],[844,171],[960,180,"check"],[1078,216],
+    [1155,246],[1220,340,"high"],[1285,450,"think"],[1291,525],[1270,630,"keep"],[1180,730,"pick"],
+    [1075,778],[980,808],[880,826],[760,840,"check"],[637,821],[525,820,"high"],
+    [432,775],[350,720,"think"],[255,640],[220,560,"keep"],[216,440],[265,355,"pick"]
   ];
-  // 집: 길과 만나는 칸(j), 집 앞 디딤칸(stub)
+  // 집: 길과 만나는 칸(j)
   var HOUSES = {
-    tl: { name: "나무뿌리 집", pos: [205,262], j: 0 },
-    tr: { name: "새싹 집", pos: [858,262], j: 7 },
-    br: { name: "돌멩이 집", pos: [862,1245], j: 15, stub: [695,1182] },
-    bl: { name: "단풍잎 집", pos: [205,1245], j: 19, stub: [353,1186] }
+    tl: { name: "나무뿌리 집", pos: [190,215], j: 0 },
+    tr: { name: "새싹 집", pos: [1345,215], j: 8 },
+    br: { name: "돌멩이 집", pos: [1345,875], j: 14 },
+    bl: { name: "단풍잎 집", pos: [190,875], j: 20 }
   };
   var MOLES = ["teal", "green", "overall", "orange", "yellow", "purple"];
   var Q = {
@@ -225,7 +244,7 @@ button { font-family: inherit; }
       list.forEach(function (i, k) {
         var p = players[i];
         if (!p.el) { p.el = document.createElement("div"); p.el.className = "piece"; p.el.innerHTML = '<img src="img/mole/' + p.mole + '.webp" alt="' + (i + 1) + '번 친구">'; }
-        var off = (k - (list.length - 1) / 2) * 34;
+        var off = (k - (list.length - 1) / 2) * 46;
         var pos = pct([xy[0] + off, xy[1]]);
         p.el.style.left = pos.left; p.el.style.top = pos.top;
         p.el.classList.toggle("turn", i === cur && !over);
@@ -233,9 +252,28 @@ button { font-family: inherit; }
       });
     });
   }
-  function clearMarks() { layer.querySelectorAll(".mark").forEach(function (e) { e.remove(); }); }
-  function toast(text, ms) {
-    var t = document.createElement("div"); t.className = "toast"; t.textContent = text; layer.appendChild(t);
+  // 갈 칸 고르기: 모든 칸을 누를 수 있고, 맞는 칸이면 움직여요. 힌트를 누르면 갈 수 있는 칸이 반짝여요
+  var pending = null, hintOn = false, hintBtn = document.getElementById("hintbtn");
+  function allNodes() { var l = RING.map(function (_, i) { return "r" + i; }); for (var k in HOUSES) l.push("h-" + k); return l; }
+  function showSpots() {
+    clearMarks(); hintBtn.hidden = false; hintBtn.setAttribute("aria-pressed", String(hintOn));
+    var goal = {}; pending.paths.forEach(function (path) { goal[path[path.length - 1]] = path; });
+    allNodes().forEach(function (node) {
+      var m = document.createElement("button"); m.type = "button"; m.className = "spot" + (hintOn && goal[node] ? " hint" : "");
+      var pos = pct(xyOf(node)); m.style.left = pos.left; m.style.top = pos.top;
+      m.setAttribute("aria-label", goal[node] ? "갈 수 있는 칸" : "칸");
+      m.addEventListener("click", function () {
+        if (!pending) return;
+        if (goal[node]) { var p = pending.p; pending = null; hintOn = false; clearMarks(); move(p, goal[node]); }
+        else { toast("한 칸씩 다시 세어 볼까요?", 1300, true); }
+      });
+      layer.appendChild(m);
+    });
+  }
+  hintBtn.addEventListener("click", function () { if (!pending) return; hintOn = !hintOn; showSpots(); });
+  function clearMarks() { layer.querySelectorAll(".spot").forEach(function (e) { e.remove(); }); hintBtn.hidden = true; }
+  function toast(text, ms, soft) {
+    var t = document.createElement("div"); t.className = "toast" + (soft ? " soft" : ""); t.textContent = text; layer.appendChild(t);
     setTimeout(function () { t.remove(); }, ms || 1400);
   }
   function setTurnBar(msg) {
@@ -262,17 +300,10 @@ button { font-family: inherit; }
     if (!d.n) { setTurnBar("펑! 이번엔 쉬어 가요"); toast("펑! 쉬어 가요"); setTimeout(nextTurn, 1700); return; }
     if (forced(p)) { setTurnBar(d.n + "칸! 짝꿍네 집으로 쏙!"); setTimeout(function () { move(p, plan(p, d.n, 1)); }, 600); return; }
     var a = plan(p, d.n, 1), b = plan(p, d.n, -1);
-    setTurnBar(d.n + "칸! 반짝이는 칸 중에 갈 곳을 눌러요");
-    var ends = [a];
-    if (b[b.length - 1] !== a[a.length - 1]) ends.push(b);
-    ends.forEach(function (path) {
-      var m = document.createElement("button"); m.type = "button"; m.className = "mark";
-      var pos = pct(xyOf(path[path.length - 1])); m.style.left = pos.left; m.style.top = pos.top;
-      m.setAttribute("aria-label", "여기로 가기");
-      m.innerHTML = "<span>여기!</span>";
-      m.addEventListener("click", function () { clearMarks(); move(p, path); });
-      layer.appendChild(m);
-    });
+    pending = { p: p, paths: [a] };
+    if (b[b.length - 1] !== a[a.length - 1]) pending.paths.push(b);
+    setTurnBar(d.n + "칸! 세어 보고 갈 칸을 눌러요");
+    showSpots();
   });
 
   function move(p, path) {
@@ -322,12 +353,12 @@ button { font-family: inherit; }
       cTitle.hidden = true; // 그림 안에 이름이 들어 있어요
       cQ.textContent = item.t; cKey.textContent = g.key;
     }
-    card.hidden = false; say(item);
+    card.hidden = false; dice.style.visibility = "hidden"; say(item);
     setTurnBar(kind === "meet" || kind === "high" ? "하이파이브 해요!" : "질문에 대답해요");
     setTimeout(function () { try { card.querySelector(".done").focus(); } catch (e) {} }, 50);
   }
   card.querySelector(".again").addEventListener("click", function () { say(curItem); });
-  card.querySelector(".done").addEventListener("click", function () { stopVoice(); card.hidden = true; nextTurn(); });
+  card.querySelector(".done").addEventListener("click", function () { stopVoice(); card.hidden = true; dice.style.visibility = ""; nextTurn(); });
 
   /* ---------- 소리 ---------- */
   var actx = null;
@@ -378,7 +409,7 @@ button { font-family: inherit; }
   var setup = document.getElementById("setup"), sbox = document.getElementById("setupbox");
   var want = 0, draft = [];
   function openSetup() {
-    stopVoice(); card.hidden = true; winEl.hidden = true; clearMarks();
+    stopVoice(); card.hidden = true; dice.style.visibility = ""; winEl.hidden = true; clearMarks(); pending = null; hintOn = false;
     players.forEach(function (p) { if (p.el) p.el.remove(); });
     players = []; draft = []; cur = 0; over = false; busy = true;
     post({ jj: "lock", on: true });
@@ -407,7 +438,7 @@ button { font-family: inherit; }
     sbox.innerHTML = '<h2>' + (k + 1) + '번 친구, 내 집을 골라요</h2><div class="choices two"></div>';
     ["tl", "tr", "bl", "br"].forEach(function (h) {
       var b = document.createElement("button"); b.type = "button"; b.className = "choice house";
-      b.innerHTML = '<img src="img/house_' + h + '.webp" alt="">' + HOUSES[h].name;
+      b.innerHTML = '<img src="img/house_' + h + '.webp?v=2" alt="">' + HOUSES[h].name;
       b.disabled = draft.some(function (d) { return d.house === h; });
       b.addEventListener("click", function () {
         draft[k].house = h;
