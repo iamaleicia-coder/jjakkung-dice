@@ -396,8 +396,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     if (!W || !H) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    var S = Math.min(W * 0.4, H * 0.37);
-    var groundY = H * 0.66, cx = W / 2 + driftX, lift = hop * H * 0.42;
+    var S = Math.min(W * 0.4, H * 0.37) * 1.15; // 주사위 크기 (1.15 = 15% 키움)
+    var groundY = Math.min(H * 0.66, H - S * 0.97), cx = W / 2 + driftX, lift = hop * H * 0.42;
     var cy = groundY - lift - S * 0.18;
 
     ctx.lineWidth = 1.5;
