@@ -667,7 +667,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
   var qBtns = Array.prototype.slice.call(document.querySelectorAll(".qb"));
   var qBag = {}, qCur = null, qPlayer = null, koVoice = null;
   // 그림 파일이 있는 기호는 버튼과 카드에 그 그림을 써요 (그림 안에 이름과 AI 표시가 들어 있어요)
-  var QIMG = { pick: "img/pick.png", keep: "img/keep.png", check: "img/check.png" };
+  var QIMG = { think: "img/think.png", check: "img/check.png", pick: "img/pick.png", keep: "img/keep.png", high: "img/high.png" };
   qBtns.forEach(function (b) {
     var k = b.getAttribute("data-k");
     if (QIMG[k]) { b.classList.add("pic"); b.innerHTML = '<img src="' + QIMG[k] + '" alt="' + Q[k].name + '">'; }
