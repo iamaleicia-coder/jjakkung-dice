@@ -115,6 +115,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
 #qcard .done { background: var(--purple); color: #fff; box-shadow: 0 4px 0 #522468; }
 @media (prefers-reduced-motion: reduce) { #qcard .box { animation: none; } }
 @media (max-height: 640px) { .qb svg { width: 26px; height: 26px; } .qb { padding: 6px 2px 4px; } }
+#table .anyname { vertical-align: middle; }
+#table .invite { margin-left: 6px; min-height: 36px; padding: 0 12px; border: 1.5px solid var(--purple); border-radius: 18px; background: rgba(255,244,224,.7); color: var(--purple); font: 400 .875rem var(--display); cursor: pointer; vertical-align: middle; }
+#invitebox { position: fixed; inset: 0; z-index: 7; display: grid; place-items: center; padding: 20px; background: rgba(74,42,18,.5); backdrop-filter: blur(3px); }
+#invitebox .box { width: min(100%, 360px); background: var(--paper); border: 3px solid var(--line); border-radius: 28px; padding: 22px; display: grid; gap: 14px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+#invitebox h2 { margin: 0; font: 400 1.4rem var(--display); color: var(--purple); }
+#invitebox p { margin: 0; color: var(--muted); font-size: .9375rem; line-height: 1.5; word-break: keep-all; }
+#inviteqr { background: #fff; border-radius: 16px; padding: 10px; border: 2px solid var(--purple); word-break: break-all; font-size: .75rem; }
+#inviteqr svg { display: block; width: 100%; height: auto; }
+#inviteqr svg path, #inviteqr svg rect[fill="black"] { fill: #3a1d4f; }
+#inviteclose { min-height: 52px; border: 0; border-radius: 16px; background: var(--purple); color: #fff; font: 400 1.15rem var(--display); cursor: pointer; box-shadow: 0 4px 0 #522468; }
 [hidden] { display: none !important; }
 </style>
 </head>
@@ -162,6 +172,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
     </div>
   </div>
 </div>
+<div id="invitebox" hidden role="dialog" aria-modal="true" aria-labelledby="invitetitle">
+  <div class="box">
+    <h2 id="invitetitle">함께할 폰 연결하기</h2>
+    <div id="inviteqr"></div>
+    <p>같이 놀 폰의 카메라로 이 QR을 찍어요.<br>이 QR로 들어온 폰끼리만 주사위가 함께 보여요.</p>
+    <button type="button" id="inviteclose">닫기</button>
+  </div>
+</div>
+<script src="qrcode.js"></script>
 <script src="mqtt.min.js"></script>
 <script>
 (function () {
@@ -571,10 +590,46 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--purple); ou
 
   /* ---------- 실시간 연결: 무료 공개 MQTT 중계 (가입 없음) ---------- */
   // 주소의 ?t=번호 로 테이블(방)을 나눔. 같은 번호끼리만 주사위가 보임
+  /* ---------- 방 나누기 ----------
+     페스타 테이블: 주소 ?t=1, ?t=2, ?t=3 → 같은 번호끼리 함께 봐요
+     언제든 놀이: 주소에 번호가 없으면(또는 페스타가 끝나면) 이 폰만의 새 방이 생겨요.
+                 같이 놀 폰은 화면의 '함께할 폰 연결하기' QR로만 들어올 수 있어요 */
+  var FESTA_LAST_DAY = "2026-11-28"; // 페스타 마지막 날. "2026-12-05" 처럼 적으면, 그 다음 날부터 테이블 QR도 언제든 놀이로 열려요
   var params = new URLSearchParams(location.search);
-  var table = (params.get("t") || "1").replace(/[^0-9a-zA-Z_-]/g, "").slice(0, 12) || "1";
-  document.getElementById("table").textContent = table + "번 테이블";
-  var BASE = "jjakkung-dice/v1/" + table + "/";
+  var todayKST = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+  var festaOver = !!FESTA_LAST_DAY && todayKST > FESTA_LAST_DAY;
+  var room = (params.get("r") || "").replace(/[^0-9a-z]/g, "").slice(0, 16);
+  var table = (params.get("t") || "").replace(/[^0-9a-zA-Z_-]/g, "").slice(0, 12);
+  if (!room && (!table || festaOver)) {
+    var ABC = "abcdefghjkmnpqrstuvwxyz23456789", bytes = new Uint8Array(10);
+    try { crypto.getRandomValues(bytes); } catch (e) { for (var bi = 0; bi < 10; bi++) bytes[bi] = Math.floor(Math.random() * 256); }
+    for (var ci = 0; ci < 10; ci++) room += ABC[bytes[ci] % ABC.length];
+    try { window.history.replaceState(null, "", location.pathname + "?r=" + room); } catch (e) {}
+  }
+  var tableEl = document.getElementById("table");
+  var BASE;
+  if (room) {
+    BASE = "jjakkung-dice/v1/r-" + room + "/";
+    tableEl.innerHTML = '<span class="anyname">언제든 놀이</span> <button type="button" id="invite" class="invite">함께할 폰 연결하기</button>';
+    setupInvite(location.origin + location.pathname + "?r=" + room);
+  } else {
+    BASE = "jjakkung-dice/v1/" + table + "/";
+    tableEl.textContent = table + "번 테이블";
+  }
+  function setupInvite(link) {
+    var box = document.getElementById("invitebox");
+    document.getElementById("invite").addEventListener("click", function () {
+      var holder = document.getElementById("inviteqr");
+      if (!holder.firstChild && window.qrcode) {
+        try { var qr = window.qrcode(0, "M"); qr.addData(link); qr.make(); holder.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); } catch (e) {}
+      }
+      if (!holder.firstChild) holder.textContent = link;
+      box.hidden = false;
+      setTimeout(function () { try { document.getElementById("inviteclose").focus(); } catch (e) {} }, 50);
+    });
+    document.getElementById("inviteclose").addEventListener("click", function () { box.hidden = true; });
+    box.addEventListener("click", function (e) { if (e.target === box) box.hidden = true; });
+  }
   var myId = Math.random().toString(36).slice(2, 10);
   var SERVERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt"];
   var client = null, here = {}, connected = false;
