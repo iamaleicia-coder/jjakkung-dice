@@ -38,6 +38,13 @@ button { font-family: inherit; }
 @keyframes hop { 40% { margin-top: -2.6%; } }
 @keyframes bob { to { margin-top: -4px; } }
 #side { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 6px; }
+#qref { justify-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1.5px dashed var(--muted); border-radius: 18px; background: rgba(255,244,224,.6); color: var(--muted); font: .8125rem var(--body); cursor: pointer; }
+#qref svg { width: 18px; height: 18px; }
+#qcardview .box { width: min(100%, 560px); padding: 14px; gap: 10px; }
+#qcardview img { width: 100%; height: auto; display: block; border-radius: 10px; }
+#qcardview .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#qcardview .close { background: #fff; color: var(--purple); border: 2px solid var(--purple); box-shadow: none; }
+@media print { body > *:not(#qcardview) { display: none !important; } #qcardview { position: static; background: none; padding: 0; backdrop-filter: none; } #qcardview .box { width: 100%; border: 0; box-shadow: none; padding: 0; animation: none; } #qcardview .btns { display: none; } #qcardview img { border-radius: 0; } @page { size: A5; margin: 0; } }
 #turn { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 10px; background: rgba(255,244,224,.75); border: 2px solid var(--line); border-radius: 18px; padding: 6px 10px; }
 #turn img { height: clamp(40px, 7vh, 64px); width: auto; display: block; }
 #turn b { display: block; font: 400 clamp(1.05rem, 3.2vh, 1.4rem)/1.2 var(--display); color: var(--purple); }
@@ -126,11 +133,22 @@ button { font-family: inherit; }
         </div>
       </div>
     </div>
+    <button id="qref" type="button" aria-haspopup="dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="2.5" width="12" height="15" rx="2" fill="#fff" stroke="currentColor" stroke-width="1.5"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>참고 · 질문 카드 보기/인쇄</button>
   </aside>
 </div>
 
 <div id="setup" class="over"><div class="box" id="setupbox"></div></div>
 
+
+<div id="qcardview" class="over" hidden role="dialog" aria-modal="true" aria-label="질문 카드">
+  <div class="box">
+    <img src="img/question-card.webp" alt="짝꿍 만나러 가요! 질문 카드: 지켜요·확인해요·골라요·생각해요 질문 각 3개와 하이파이브 칸 안내">
+    <div class="btns">
+      <button class="big close" type="button">닫기</button>
+      <button class="big print" type="button">인쇄하기</button>
+    </div>
+  </div>
+</div>
 
 <div id="win" class="over" hidden role="dialog" aria-modal="true" aria-labelledby="wtitle">
   <div class="box">
@@ -455,6 +473,11 @@ button { font-family: inherit; }
     post({ jj: "sound", on: soundOn });
     if (players.length && !busy && !over) post({ jj: "lock", on: false, text: (cur + 1) + "번 친구, 던져요!" }); else post({ jj: "lock", on: true });
   });
+  var qv = document.getElementById("qcardview");
+  document.getElementById("qref").addEventListener("click", function () { qv.hidden = false; });
+  qv.querySelector(".close").addEventListener("click", function () { qv.hidden = true; });
+  qv.querySelector(".print").addEventListener("click", function () { window.print(); });
+  qv.addEventListener("click", function (e) { if (e.target === qv) qv.hidden = true; });
   openSetup();
 })();
 </script>
